@@ -1,0 +1,35 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: openfoodfacts-kmeans-app
+    environment:
+      MONGO_URI: mongodb://mongo:27017/openfoodfacts
+      MONGO_DATABASE: openfoodfacts
+    volumes:
+      - ./src/data:/app/src/data
+      - ./src/artifacts:/app/src/artifacts
+      - ./src/models:/app/src/models
+    depends_on:
+      mongo:
+        condition: service_healthy
+    command: ["python", "main.py", "train"]
+
+  mongo:
+    image: mongo:7
+    container_name: openfoodfacts-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+
+volumes:
+  mongo_data:
